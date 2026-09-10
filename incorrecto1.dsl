@@ -1,1 +1,0 @@
-datos abrir "ventas.csv";
