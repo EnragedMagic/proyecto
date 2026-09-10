@@ -1,0 +1,1 @@
+datos abrir "ventas.csv";
