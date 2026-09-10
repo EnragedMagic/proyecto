@@ -1,6 +1,6 @@
 # Alcance del proyecto
 
-## Nombre del lenguaje
+## MagicDSL
 
 DataDSL
 
