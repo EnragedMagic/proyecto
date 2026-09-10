@@ -1,8 +1,6 @@
 # Alcance del proyecto
 
-## MagicDSL
-
-DataDSL
+## DataDSL
 
 ## Descripcion general
 
