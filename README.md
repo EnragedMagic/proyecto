@@ -1,5 +1,7 @@
 # DataDSL
 
+Hecho por Johan Steven Galeano Gonzalez 
+
 Proyecto de Lenguajes de Programacion y Transduccion.
 
 DataDSL es un lenguaje de dominio especifico orientado a operaciones basicas de ciencia de datos.
