@@ -1,7 +1,7 @@
 # ======================================================
 # ERRORES SEMANTICOS
 # ======================================================
-#
+# SENTIDO - VALIDACION - ERRORES
 # Este archivo define errores propios de DataDSL.
 #
 # Un error semantico ocurre cuando una instruccion
