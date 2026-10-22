@@ -1,62 +1,136 @@
 # DataDSL
 
-Hecho por Johan Steven Galeano Gonzalez 
+Hecho por Johan Steven Galeano Gonzalez
 
 Proyecto de Lenguajes de Programacion y Transduccion.
 
-DataDSL es un lenguaje de dominio especifico orientado a operaciones basicas de ciencia de datos.
+DataDSL es un lenguaje de dominio especifico orientado a operaciones de ciencia de datos.
 
-Esta primera fase se enfoca en la definicion de la sintaxis del lenguaje, la construccion del lexer y parser con ANTLR4 y la validacion de programas correctos e incorrectos.
+En el segundo corte, el proyecto incorpora semantica y procesamiento real de datos mediante el patron Visitor, una tabla de simbolos y un motor de procesamiento implementado con pandas.
 
-## Sintaxis general
+---
 
-Un ejemplo de programa escrito en DataDSL es:
+# Objetivo del segundo corte
+
+El objetivo es que DataDSL deje de limitarse al reconocimiento sintactico y pueda ejecutar operaciones reales sobre datos.
+
+La version actual permite:
+
+- Cargar archivos CSV.
+- Guardar variables en una tabla de simbolos.
+- Seleccionar columnas.
+- Filtrar registros.
+- Ordenar datos.
+- Crear columnas calculadas.
+- Tratar valores faltantes.
+- Agrupar datos.
+- Calcular estadisticas descriptivas.
+- Exportar resultados a CSV.
+- Detectar errores semanticos.
+
+---
+
+# Ejemplo de programa
 
 ```text
-datos := abrir "ventas.csv";
+datos := abrir "datos/ventas.csv";
 
-ventas := datos
--> tomar [ciudad, producto, precio]
--> cuando precio > 100;
+ventas_limpias := datos
+-> tomar [ciudad, producto, cantidad, precio]
+-> cuando cantidad > 0
+-> crear total := cantidad * precio
+-> ordenar por total desc;
 
-mostrar barras de ventas;
+resumen := ventas_limpias
+-> agrupar por [ciudad]
+-> resumir ingreso := suma(total),
+           promedio := media(total),
+           registros := contar();
+
+guardar resumen como "salidas/resumen_ciudades.csv";
 ```
 
-## Funcionalidades de esta fase
+---
 
-Actualmente el lenguaje reconoce:
-
-- Asignaciones.
-- Apertura de archivos CSV.
-- Seleccion de columnas.
-- Filtros con condiciones.
-- Expresiones aritmeticas.
-- Comparaciones.
-- Operadores logicos.
-- Encadenamiento de operaciones con `->`.
-- Instrucciones de visualizacion.
-
-La instruccion de visualizacion solo se reconoce de forma sintactica. En esta fase no se genera una grafica real.
-
-## Estructura del proyecto
+# Arquitectura general
 
 ```text
-DataDSL/
+Programa .dsl
+    |
+    v
+Lexer
+    |
+    v
+Parser
+    |
+    v
+Arbol sintactico
+    |
+    v
+Visitor
+    |
+    v
+Tabla de simbolos
+    |
+    v
+MotorDatos
+    |
+    v
+pandas
+    |
+    v
+Resultado / CSV
+```
+
+La responsabilidad de cada componente es:
+
+- Lexer: convierte el texto en tokens.
+- Parser: verifica la estructura del lenguaje.
+- Visitor: interpreta el arbol sintactico.
+- ContextoEjecucion: administra la tabla de simbolos.
+- MotorDatos: ejecuta operaciones reales con pandas.
+- ErroresSemanticos: controla errores durante la ejecucion.
+
+---
+
+# Estructura del proyecto
+
+```text
+proyecto/
 |
 |-- grammar/
 |   `-- DataDSL.g4
+|
+|-- src/
+|   |-- ContextoEjecucion.py
+|   |-- DataDSLVisitorImpl.py
+|   |-- ErroresSemanticos.py
+|   `-- MotorDatos.py
+|
+|-- datos/
+|   `-- ventas.csv
 |
 |-- ejemplos/
 |   |-- correcto1.dsl
 |   |-- correcto2.dsl
 |   |-- correcto3.dsl
 |   |-- incorrecto1.dsl
-|   `-- incorrecto2.dsl
+|   |-- incorrecto2.dsl
+|   |-- programa1.dsl
+|   |-- programa2.dsl
+|   `-- programa3.dsl
+|
+|-- tests/
+|   |-- test_carga.py
+|   |-- test_filtros.py
+|   |-- test_semantica.py
+|   `-- test_integracion.py
 |
 |-- docs/
 |   |-- alcance.md
+|   |-- gramatica_ebnf.md
 |   |-- instrucciones.md
-|   `-- gramatica_ebnf.md
+|   `-- reglas_semanticas.md
 |
 |-- generated/
 |
@@ -65,42 +139,54 @@ DataDSL/
 `-- README.md
 ```
 
-## Requisitos
+---
+
+# Requisitos
 
 Para ejecutar el proyecto se necesita:
 
 - Python 3.11 o superior.
 - Java.
 - ANTLR4.
+- pandas.
+- pytest.
 - Runtime de ANTLR para Python.
 
-Instalar el runtime de ANTLR con:
+Instalar las dependencias de Python con:
 
 ```bash
-pip install antlr4-python3-runtime==4.13.2
+pip install antlr4-python3-runtime==4.13.2 pandas pytest
 ```
 
-## Generar Lexer y Parser
+---
 
-Desde la carpeta principal del proyecto, entrar a `grammar`:
+# Generar Lexer, Parser y Visitor
+
+ANTLR genera automaticamente los archivos necesarios a partir de:
+
+```text
+grammar/DataDSL.g4
+```
+
+Desde la carpeta principal del proyecto:
 
 ```bash
 cd grammar
 ```
 
-Generar los archivos de ANTLR para Python:
+Ejecutar:
 
 ```bash
 antlr4 -Dlanguage=Python3 -visitor -o ../generated DataDSL.g4
 ```
 
-Volver a la carpeta principal:
+Volver a la raiz:
 
 ```bash
 cd ..
 ```
 
-ANTLR genera automaticamente archivos como:
+ANTLR genera archivos como:
 
 ```text
 DataDSLLexer.py
@@ -109,70 +195,327 @@ DataDSLListener.py
 DataDSLVisitor.py
 ```
 
-Estos archivos se guardan en la carpeta `generated`.
-
-## Ejecutar el programa
-
-Para probar un archivo correcto:
-
-```bash
-python main.py ejemplos/correcto1.dsl
-```
-
-Tambien se pueden ejecutar:
-
-```bash
-python main.py ejemplos/correcto2.dsl
-```
-
-```bash
-python main.py ejemplos/correcto3.dsl
-```
-
-Si el programa cumple la gramatica, la salida muestra:
+Estos archivos se guardan dentro de:
 
 ```text
-Programa valido
-
-Arbol de analisis:
-
-(programa ...)
+generated/
 ```
 
-## Probar errores
+---
 
-Para probar un archivo incorrecto:
+# Ejecutar DataDSL
+
+Para ejecutar un programa:
 
 ```bash
-python main.py ejemplos/incorrecto1.dsl
+python main.py ejemplos/programa1.dsl
 ```
 
-o:
+Tambien pueden ejecutarse:
 
 ```bash
-python main.py ejemplos/incorrecto2.dsl
+python main.py ejemplos/programa2.dsl
 ```
 
-El programa muestra la linea y la columna donde ANTLR encuentra el error.
+```bash
+python main.py ejemplos/programa3.dsl
+```
+
+El archivo `main.py` realiza el flujo completo:
+
+```text
+archivo .dsl
+-> Lexer
+-> Parser
+-> Arbol
+-> Visitor
+-> MotorDatos
+-> Resultado
+```
+
+---
+
+# Programas completos
+
+## programa1.dsl
+
+Demuestra:
+
+- Carga.
+- Seleccion.
+- Filtrado.
+- Ordenamiento.
+- Exportacion.
+
+## programa2.dsl
+
+Demuestra:
+
+- Tratamiento de valores faltantes.
+- Creacion de columnas.
+- Ordenamiento.
+- Exportacion.
+
+## programa3.dsl
+
+Demuestra:
+
+- Carga.
+- Seleccion.
+- Filtrado.
+- Columna calculada.
+- Agrupamiento.
+- Estadisticas.
+- Exportacion.
+
+Este programa es el ejemplo principal del segundo corte.
+
+---
+
+# Datos de prueba
+
+El archivo:
+
+```text
+datos/ventas.csv
+```
+
+contiene datos reales de ejemplo con:
+
+- Ciudad.
+- Producto.
+- Cantidad.
+- Precio.
+
+Tambien incluye un valor faltante para probar las operaciones de limpieza.
+
+---
+
+# Tabla de simbolos
+
+La tabla de simbolos se encuentra en:
+
+```text
+src/ContextoEjecucion.py
+```
+
+Su funcion es relacionar los nombres escritos en DataDSL con objetos reales durante la ejecucion.
 
 Ejemplo:
 
 ```text
-Error en linea 1, columna 6: ...
+datos -> DataFrame
+ventas_limpias -> DataFrame
+resumen -> DataFrame
 ```
 
-## Documentacion
+---
 
-La carpeta `docs` contiene la documentacion principal del lenguaje:
+# Motor de procesamiento
 
-- `alcance.md`: describe el objetivo, usuarios, entradas, salidas y limitaciones de la primera fase.
-- `catalogo_instrucciones.md`: explica las instrucciones y operadores disponibles.
-- `gramatica_ebnf.md`: contiene la definicion formal de la sintaxis antes de su implementacion en ANTLR4.
+El archivo:
 
-## Estado actual
+```text
+src/MotorDatos.py
+```
 
-Esta version corresponde a la primera fase del proyecto.
+utiliza pandas para ejecutar operaciones como:
 
-El sistema permite reconocer programas escritos en DataDSL, generar su arbol de analisis sintactico y detectar errores lexicos o sintacticos.
+- `read_csv`
+- seleccion de columnas
+- filtros
+- ordenamiento
+- tratamiento de nulos
+- agrupamiento
+- agregaciones
+- exportacion con `to_csv`
 
-El procesamiento real de datos, la tabla de simbolos, el Visitor y la generacion de visualizaciones corresponden a las siguientes fases del proyecto.
+---
+
+# Visitor
+
+El archivo:
+
+```text
+src/DataDSLVisitorImpl.py
+```
+
+implementa el patron Visitor.
+
+Su funcion es recorrer el arbol generado por ANTLR e interpretar cada instruccion.
+
+Ejemplo:
+
+```text
+-> crear total := cantidad * precio
+```
+
+El Visitor reconoce la instruccion y solicita al MotorDatos que cree la nueva columna.
+
+---
+
+# Errores semanticos
+
+El archivo:
+
+```text
+src/ErroresSemanticos.py
+```
+
+define errores como:
+
+```text
+VariableNoDefinidaError
+ColumnaNoExisteError
+TipoIncompatibleError
+OperacionNoPermitidaError
+ArchivoNoExisteError
+```
+
+Estos errores ocurren cuando una instruccion esta correctamente escrita, pero no puede ejecutarse de forma valida.
+
+---
+
+# Pruebas
+
+El proyecto utiliza `pytest`.
+
+Para ejecutar todas las pruebas:
+
+```bash
+pytest
+```
+
+Tambien puede usarse:
+
+```bash
+pytest -v
+```
+
+Las pruebas incluidas son:
+
+```text
+tests/test_carga.py
+```
+
+Verifica la carga de archivos CSV.
+
+```text
+tests/test_filtros.py
+```
+
+Verifica el filtrado de registros.
+
+```text
+tests/test_semantica.py
+```
+
+Verifica errores semanticos esperados.
+
+```text
+tests/test_integracion.py
+```
+
+Verifica un flujo completo de procesamiento.
+
+La prueba de integracion realiza:
+
+```text
+cargar
+-> seleccionar
+-> filtrar
+-> crear columna
+-> agrupar
+-> resumir
+-> exportar
+```
+
+---
+
+# Documentacion
+
+La carpeta:
+
+```text
+docs/
+```
+
+contiene:
+
+## alcance.md
+
+Describe:
+
+- Objetivo.
+- Entradas.
+- Salidas.
+- Funcionalidades.
+- Limitaciones.
+
+## instrucciones.md
+
+Documenta todas las instrucciones disponibles en DataDSL.
+
+## gramatica_ebnf.md
+
+Contiene la representacion formal del lenguaje en EBNF.
+
+## reglas_semanticas.md
+
+Explica las reglas semanticas y los errores que pueden aparecer durante la ejecucion.
+
+---
+
+# Resultado esperado del segundo corte
+
+El objetivo principal es que DataDSL pueda procesar datos reales y generar una tabla resumen.
+
+Un flujo completo debe ser capaz de:
+
+```text
+CSV de entrada
+    |
+    v
+Carga
+    |
+    v
+Transformacion
+    |
+    v
+Filtrado
+    |
+    v
+Agrupamiento
+    |
+    v
+Estadisticas
+    |
+    v
+CSV de salida
+```
+
+El resultado principal se puede exportar mediante:
+
+```text
+guardar resumen como "salidas/resumen_ciudades.csv";
+```
+
+---
+
+# Estado actual
+
+Esta version corresponde al segundo corte del proyecto.
+
+Actualmente se encuentra implementada la estructura necesaria para:
+
+- Semantica.
+- Visitor.
+- Tabla de simbolos.
+- Procesamiento de datos.
+- Validaciones semanticas.
+- Pruebas unitarias.
+- Prueba de integracion.
+- Programas completos.
+- Exportacion de resultados.
+
+Las visualizaciones completas se desarrollaran principalmente en el tercer corte.
