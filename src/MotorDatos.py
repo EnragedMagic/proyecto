@@ -1,7 +1,7 @@
 # ======================================================
 # MOTOR DE PROCESAMIENTO DE DATOS
 # ======================================================
-#
+# Tablas - Procesamiento - Datos
 # Este archivo contiene las operaciones reales que
 # DataDSL puede realizar sobre los datos.
 #
