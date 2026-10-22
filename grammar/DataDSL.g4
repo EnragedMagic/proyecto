@@ -18,7 +18,6 @@ programa
 
 
 // Cada instruccion termina con punto y coma.
-// En el segundo corte agregamos "guardar" para exportar CSV.
 instruccion
     : asignacion FIN
     | guardado FIN
