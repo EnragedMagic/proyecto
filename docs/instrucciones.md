@@ -1,26 +1,49 @@
-# Catalogo de instrucciones
+# Catalogo de instrucciones de DataDSL
 
-DataDSL utiliza instrucciones sencillas para representar operaciones basicas relacionadas con ciencia de datos.
+## Objetivo
 
-## Abrir
+Este documento explica las instrucciones disponibles en DataDSL.
 
-La instruccion `abrir` permite indicar que una variable representa un archivo CSV.
+Cada instruccion representa una operacion que el usuario puede escribir dentro de un archivo `.dsl`.
+
+En resumen:
+
+- La gramatica define como se escriben.
+- El Visitor interpreta lo que significan.
+- El MotorDatos ejecuta las operaciones reales con pandas.
+
+---
+
+# 1. Abrir
+
+La instruccion `abrir` carga un archivo CSV.
 
 Sintaxis:
 
 ```text
-variable := abrir "archivo.csv";
+variable := abrir "ruta/archivo.csv";
 ```
 
 Ejemplo:
 
 ```text
-datos := abrir "ventas.csv";
+datos := abrir "datos/ventas.csv";
 ```
 
-## Tomar
+Significado:
 
-La instruccion `tomar` permite seleccionar las columnas que se quieren conservar de un conjunto de datos.
+- `datos` es el nombre de la variable.
+- `:=` realiza la asignacion.
+- `abrir` indica que debe cargarse un archivo.
+- `"datos/ventas.csv"` es la ruta del archivo.
+
+Internamente, el archivo se convierte en un DataFrame de pandas.
+
+---
+
+# 2. Tomar
+
+La instruccion `tomar` selecciona columnas especificas.
 
 Sintaxis:
 
@@ -36,9 +59,15 @@ ventas := datos
 -> tomar [ciudad, producto, precio];
 ```
 
-## Cuando
+Solo se conservan las columnas indicadas.
 
-La instruccion `cuando` permite aplicar una condicion sobre los datos.
+Todas las columnas deben existir.
+
+---
+
+# 3. Cuando
+
+La instruccion `cuando` filtra filas utilizando una condicion.
 
 Sintaxis:
 
@@ -54,19 +83,245 @@ ventas := datos
 -> cuando precio > 100;
 ```
 
-Tambien puede usarse despues de otra operacion:
+Tambien se pueden combinar condiciones:
 
 ```text
 ventas := datos
--> tomar [ciudad, precio]
--> cuando precio > 100;
+-> cuando precio > 100 y cantidad > 0;
 ```
 
-## Mostrar
+Las filas donde la condicion sea verdadera se conservan.
 
-La instruccion `mostrar` permite reconocer una instruccion de visualizacion.
+---
 
-En esta primera fase solamente se valida la sintaxis de la instruccion. La grafica no se genera todavia.
+# 4. Ordenar
+
+La instruccion `ordenar` organiza los registros segun una columna.
+
+Sintaxis:
+
+```text
+-> ordenar por columna
+```
+
+Puede indicarse el sentido:
+
+```text
+-> ordenar por precio asc
+```
+
+o:
+
+```text
+-> ordenar por precio desc
+```
+
+Significado:
+
+- `asc` = ascendente.
+- `desc` = descendente.
+
+Si no se indica direccion, se utiliza orden ascendente.
+
+---
+
+# 5. Crear
+
+La instruccion `crear` genera una nueva columna calculada.
+
+Sintaxis:
+
+```text
+-> crear nueva_columna := expresion
+```
+
+Ejemplo:
+
+```text
+-> crear total := cantidad * precio
+```
+
+En este caso se crea una nueva columna llamada `total`.
+
+Su valor se obtiene multiplicando `cantidad` por `precio` en cada fila.
+
+---
+
+# 6. Rellenar
+
+La instruccion `rellenar` reemplaza valores faltantes.
+
+Sintaxis:
+
+```text
+-> rellenar columna con valor
+```
+
+Ejemplo:
+
+```text
+-> rellenar precio con 0
+```
+
+Si una fila no tiene precio, el valor faltante se reemplaza por `0`.
+
+---
+
+# 7. Eliminar nulos
+
+La instruccion `eliminar_nulos` elimina filas con valores faltantes.
+
+Sintaxis:
+
+```text
+-> eliminar_nulos [columna1, columna2]
+```
+
+Ejemplo:
+
+```text
+-> eliminar_nulos [precio, cantidad]
+```
+
+Se eliminan las filas donde alguna de esas columnas tenga un valor faltante.
+
+---
+
+# 8. Agrupar
+
+La instruccion `agrupar` organiza los datos en grupos.
+
+Sintaxis:
+
+```text
+-> agrupar por [columna]
+```
+
+Ejemplo:
+
+```text
+-> agrupar por [ciudad]
+```
+
+Esto permite reunir todas las filas que pertenezcan a la misma ciudad.
+
+Tambien se pueden usar varias columnas:
+
+```text
+-> agrupar por [ciudad, producto]
+```
+
+Normalmente, despues de `agrupar` se utiliza `resumir`.
+
+---
+
+# 9. Resumir
+
+La instruccion `resumir` calcula estadisticas sobre datos agrupados.
+
+Ejemplo:
+
+```text
+-> resumir ingreso := suma(total),
+           promedio := media(total),
+           registros := contar()
+```
+
+Cada resultado recibe un nombre.
+
+En este ejemplo:
+
+- `ingreso` guarda la suma de `total`.
+- `promedio` guarda la media de `total`.
+- `registros` cuenta las filas de cada grupo.
+
+---
+
+# 10. Funciones de agregacion
+
+DataDSL permite las siguientes funciones:
+
+## suma
+
+```text
+suma(columna)
+```
+
+Suma los valores de una columna.
+
+## media
+
+```text
+media(columna)
+```
+
+Calcula el promedio.
+
+## mediana
+
+```text
+mediana(columna)
+```
+
+Calcula la mediana.
+
+## minimo
+
+```text
+minimo(columna)
+```
+
+Obtiene el valor minimo.
+
+## maximo
+
+```text
+maximo(columna)
+```
+
+Obtiene el valor maximo.
+
+## desviacion
+
+```text
+desviacion(columna)
+```
+
+Calcula la desviacion estandar.
+
+## contar
+
+```text
+contar()
+```
+
+Cuenta los registros de cada grupo.
+
+---
+
+# 11. Guardar
+
+La instruccion `guardar` exporta un conjunto de datos a CSV.
+
+Sintaxis:
+
+```text
+guardar variable como "ruta/archivo.csv";
+```
+
+Ejemplo:
+
+```text
+guardar resumen como "salidas/resumen.csv";
+```
+
+La variable debe existir antes de poder guardarse.
+
+---
+
+# 12. Mostrar
+
+La instruccion `mostrar` representa una visualizacion.
 
 Sintaxis:
 
@@ -77,106 +332,82 @@ mostrar barras de variable;
 Ejemplo:
 
 ```text
-mostrar barras de ventas;
+mostrar barras de resumen;
 ```
 
-## Palabras reservadas
+En el segundo corte esta instruccion sigue siendo reconocida, pero la implementacion completa de visualizaciones corresponde al tercer corte.
 
-Las palabras reservadas definidas para esta version del lenguaje son:
+---
+
+# 13. Asignacion
+
+DataDSL utiliza:
 
 ```text
-abrir
-tomar
-cuando
-mostrar
-barras
-de
-verdadero
-falso
-y
-o
+:=
 ```
 
-## Identificadores
+para asignar un resultado a una variable.
 
-Los identificadores representan variables o nombres de columnas.
-
-Pueden comenzar con una letra o con guion bajo. Despues pueden contener letras, numeros o guiones bajos.
-
-Ejemplos validos:
+Ejemplo:
 
 ```text
-datos
-ventas
-ventas_limpias
-precio
-ciudad
-datos2026
+datos := abrir "datos/ventas.csv";
 ```
 
-Ejemplos invalidos:
+La variable `datos` queda registrada dentro de la tabla de simbolos.
+
+---
+
+# 14. Encadenamiento
+
+DataDSL utiliza:
 
 ```text
-2datos
-ventas-limpias
+->
 ```
 
-## Numeros
+para aplicar varias operaciones de forma consecutiva.
 
-El lenguaje reconoce numeros enteros y decimales.
-
-Ejemplos:
+Ejemplo:
 
 ```text
-10
-200
-3.14
-1500.50
+ventas := datos
+-> tomar [ciudad, precio]
+-> cuando precio > 100
+-> ordenar por precio desc;
 ```
 
-## Cadenas de texto
+Cada paso utiliza como entrada el resultado del paso anterior.
 
-Las cadenas se escriben entre comillas dobles.
+---
 
-Ejemplos:
+# 15. Operadores aritmeticos
 
-```text
-"ventas.csv"
-"Bogota"
-"producto"
-```
-
-## Valores booleanos
-
-El lenguaje reconoce los valores:
-
-```text
-verdadero
-falso
-```
-
-## Operadores aritmeticos
-
-Los operadores aritmeticos disponibles son:
+DataDSL permite:
 
 ```text
 +
 -
 *
 /
+%
+^
 ```
 
-Ejemplos:
+Ejemplo:
 
 ```text
-precio + 100
 cantidad * precio
-total / 2
 ```
 
-## Operadores relacionales
+Pueden utilizarse principalmente en columnas calculadas.
 
-Los operadores relacionales disponibles son:
+---
+
+# 16. Operadores relacionales
+
+DataDSL permite:
 
 ```text
 >
@@ -187,18 +418,19 @@ Los operadores relacionales disponibles son:
 !=
 ```
 
-Ejemplos:
+Ejemplo:
 
 ```text
-precio > 100
-edad >= 18
-ciudad == "Bogota"
-precio != 0
+precio >= 100
 ```
 
-## Operadores logicos
+Se utilizan principalmente para construir filtros.
 
-Los operadores logicos disponibles son:
+---
+
+# 17. Operadores logicos
+
+DataDSL permite:
 
 ```text
 y
@@ -211,26 +443,98 @@ Ejemplo:
 precio > 100 y cantidad > 0
 ```
 
-## Asignacion
+`y` requiere que ambas condiciones sean verdaderas.
 
-DataDSL utiliza el operador `:=` para asignar un valor o resultado a una variable.
+`o` requiere que al menos una condicion sea verdadera.
 
-Ejemplo:
+---
 
-```text
-datos := abrir "ventas.csv";
-```
+# 18. Valores booleanos
 
-## Encadenamiento de operaciones
-
-El operador `->` permite aplicar varias operaciones sobre un conjunto de datos.
-
-Ejemplo:
+DataDSL reconoce:
 
 ```text
-ventas := datos
--> tomar [ciudad, producto, precio]
--> cuando precio > 100;
+verdadero
+falso
 ```
 
-La idea es que cada paso represente una operacion sencilla dentro del flujo de trabajo.
+---
+
+# 19. Numeros
+
+Se permiten enteros y decimales.
+
+Ejemplos:
+
+```text
+10
+250
+3.14
+1500.50
+```
+
+---
+
+# 20. Cadenas de texto
+
+Las cadenas se escriben entre comillas dobles.
+
+Ejemplos:
+
+```text
+"Bogota"
+"ventas.csv"
+"datos/ventas.csv"
+```
+
+---
+
+# 21. Identificadores
+
+Los identificadores representan nombres de variables o columnas.
+
+Ejemplos validos:
+
+```text
+datos
+ventas
+ventas_limpias
+precio
+total
+datos2026
+```
+
+Deben comenzar con una letra o guion bajo.
+
+---
+
+# Ejemplo completo
+
+```text
+datos := abrir "datos/ventas.csv";
+
+ventas_limpias := datos
+-> tomar [ciudad, producto, cantidad, precio]
+-> cuando cantidad > 0
+-> crear total := cantidad * precio
+-> ordenar por total desc;
+
+resumen := ventas_limpias
+-> agrupar por [ciudad]
+-> resumir ingreso := suma(total),
+           promedio := media(total),
+           registros := contar();
+
+guardar resumen como "salidas/resumen_ciudades.csv";
+```
+
+Este programa:
+
+1. Carga un CSV.
+2. Selecciona columnas.
+3. Filtra registros.
+4. Crea una columna.
+5. Ordena los resultados.
+6. Agrupa por ciudad.
+7. Calcula estadisticas.
+8. Exporta una tabla resumen.
